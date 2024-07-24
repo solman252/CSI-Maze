@@ -45,8 +45,7 @@ controls = {
     'left': [pygame.K_LEFT],
     'right': [pygame.K_RIGHT],
     'interact': [pygame.K_c],
-    'menu': [pygame.K_RETURN],
-    'win': [pygame.K_w]
+    'menu': [pygame.K_RETURN]
 }
 def check_input(control_scheme):
     keys = pygame.key.get_pressed()
@@ -115,39 +114,56 @@ has_key = False
 
 full_vision = True
 
+frames_since_last_move = 10
+
 while True:
     clock.tick(60)
+    if frames_since_last_move < 10:
+        frames_since_last_move += 1
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
-        elif event.type == pygame.KEYDOWN:
-            if check_input('up'):
-                player_pos[1] -= 1
-                if wall.get_at(player_pos) == (0,0,0,255):
-                    player_pos[1] += 1
-                elif full_vision:
-                    full_vision = False
-            elif check_input('down'):
-                player_pos[1] += 1 
-                if wall.get_at(player_pos) == (0,0,0,255):
-                    player_pos[1] -= 1
-                elif full_vision:
-                    full_vision = False
-            elif check_input('left'):
-                player_pos[0] -= 1 
-                if wall.get_at(player_pos) == (0,0,0,255):
-                    player_pos[0] += 1
-                elif full_vision:
-                    full_vision = False
-            elif check_input('right'):
-                player_pos[0] += 1
-                if wall.get_at(player_pos) == (0,0,0,255):
-                    player_pos[0] -= 1
-                elif full_vision:
-                    full_vision = False
-            elif check_input('win'):
-                has_key = True
-                player_pos = end_pos
+    moved = False
+    if check_input('up') and (not moved) and frames_since_last_move >= 10:
+        player_pos[1] -= 1
+        moved = True
+        if wall.get_at(player_pos) == (0,0,0,255):
+            player_pos[1] += 1
+            moved = False
+        elif full_vision:
+            full_vision = False
+        if moved:
+            frames_since_last_move = 0
+    elif check_input('down') and (not moved) and frames_since_last_move >= 10:
+        player_pos[1] += 1 
+        moved = True
+        if wall.get_at(player_pos) == (0,0,0,255):
+            player_pos[1] -= 1
+            moved = False
+        elif full_vision:
+            full_vision = False
+        if moved:
+            frames_since_last_move = 0
+    if check_input('left') and (not moved) and frames_since_last_move >= 10:
+        player_pos[0] -= 1 
+        moved = True
+        if wall.get_at(player_pos) == (0,0,0,255):
+            player_pos[0] += 1
+            moved = False
+        elif full_vision:
+            full_vision = False
+        if moved:
+            frames_since_last_move = 0
+    elif check_input('right') and (not moved) and frames_since_last_move >= 10:
+        player_pos[0] += 1
+        moved = True
+        if wall.get_at(player_pos) == (0,0,0,255):
+            player_pos[0] -= 1
+            moved = False
+        elif full_vision:
+            full_vision = False
+        if moved:
+            frames_since_last_move = 0
     if player_pos == key_pos:
         has_key = True
     elif has_key:
