@@ -67,6 +67,7 @@ for x in range(wall.get_width()):
             free_spaces.append((x,y))
 
 player_pos = list(random.choice(free_spaces))
+player_pos = [1,35]
 end_pos = player_pos
 while True:
     end_pos = list(random.choice(free_spaces))
@@ -80,6 +81,13 @@ while True:
 
 has_key = False
 
+portals = {
+   (1,33): (42,17),
+   (41,17): (1,34),
+   (1,9): (50,31),
+   (49,31): (1,8),
+}
+
 while True:
     clock.tick(60)
     for event in pygame.event.get():
@@ -88,24 +96,28 @@ while True:
         elif event.type == pygame.KEYDOWN:
             if check_input('up'):
                player_pos[1] -= 1
-            #    if not (tuple(player_pos) in free_spaces):
-            #     player_pos[1] += 1
+               if wall.get_at(player_pos) == (0,0,0,255):
+                player_pos[1] += 1
             elif check_input('down'):
                player_pos[1] += 1 
-            #    if not (tuple(player_pos) in free_spaces):
-            #     player_pos[1] -= 1
+               if wall.get_at(player_pos) == (0,0,0,255):
+                player_pos[1] -= 1
             elif check_input('left'):
                player_pos[0] -= 1 
-            #    if not (tuple(player_pos) in free_spaces):
-            #     player_pos[0] += 1
+               if wall.get_at(player_pos) == (0,0,0,255):
+                player_pos[0] += 1
             elif check_input('right'):
-               player_pos[0] += 1 
-            #    if not (tuple(player_pos) in free_spaces):
-            #     player_pos[0] -= 1
+               player_pos[0] += 1
+               if wall.get_at(player_pos) == (0,0,0,255):
+                player_pos[0] -= 1
     if player_pos == key_pos:
         has_key = True
     elif has_key:
         key_pos = player_pos
+    
+    if tuple(player_pos) in list(portals.keys()):
+       player_pos = list(portals[tuple(player_pos)])
+
     screen = pygame.Surface((52,39),pygame.SRCALPHA)
 
     screen.blit(wall,(0,0))
