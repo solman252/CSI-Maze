@@ -45,7 +45,8 @@ controls = {
     'left': [pygame.K_LEFT],
     'right': [pygame.K_RIGHT],
     'interact': [pygame.K_c],
-    'menu': [pygame.K_RETURN]
+    'menu': [pygame.K_RETURN],
+    'win': [pygame.K_w]
 }
 def check_input(control_scheme):
     keys = pygame.key.get_pressed()
@@ -57,11 +58,12 @@ def check_input(control_scheme):
 # Load assets
 wall = pygame.image.load('images/maze.png')
 vignette = pygame.image.load('images/vignette.png')
-gate = pygame.image.load('images/gate.png')
+end = pygame.image.load('images/end.png')
 key = pygame.image.load('images/key.png')
 portal = pygame.image.load('images/portal.png')
 player = pygame.image.load('images/player.png')
 player_key = pygame.image.load('images/player_key.png')
+win = pygame.image.load('images/win.png')
 
 portals = {
    (1,33): (42,17),
@@ -143,6 +145,9 @@ while True:
                     player_pos[0] -= 1
                 elif full_vision:
                     full_vision = False
+            elif check_input('win'):
+                has_key = True
+                player_pos = end_pos
     if player_pos == key_pos:
         has_key = True
     elif has_key:
@@ -152,23 +157,27 @@ while True:
        player_pos = list(portals[tuple(player_pos)])
 
     display.blit(pygame.transform.scale(wall,(display_width,display_height)),(0,0))
+    end_rect = vignette.get_rect()
+    end_rect.topleft = (end_pos[0]*20,end_pos[1]*20)
+    display.blit(end,end_rect)
+    for portal_pos in portals.keys():
+        portal_rect = vignette.get_rect()
+        portal_rect.topleft = (portal_pos[0]*20,portal_pos[1]*20)
+        display.blit(portal,portal_rect)
     player_rect = vignette.get_rect()
     player_rect.topleft = (player_pos[0]*20,player_pos[1]*20)
     if has_key:
         display.blit(player_key,player_rect)
     else:
         display.blit(player,player_rect)
-    gate_rect = vignette.get_rect()
-    gate_rect.topleft = (end_pos[0]*20,end_pos[1]*20)
-    display.blit(gate,gate_rect)
     if not has_key:
         key_rect = vignette.get_rect()
         key_rect.topleft = (key_pos[0]*20,key_pos[1]*20)
         display.blit(key,key_rect)
-    for portal_pos in portals.keys():
-        portal_rect = vignette.get_rect()
-        portal_rect.topleft = (portal_pos[0]*20,portal_pos[1]*20)
-        display.blit(portal,portal_rect)
+    if has_key and math.dist(player_pos, end_pos) == 0:
+       display.blit(win,(0,0))
+       pygame.display.flip()
+       break
     if not full_vision:
         darkness = pygame.Surface(display.get_size(),pygame.SRCALPHA)
         darkness.fill('black')
@@ -178,5 +187,7 @@ while True:
         darkness.blit(vignette,vignette_rect,special_flags=pygame.BLEND_RGBA_MIN)
         display.blit(darkness,(0,0))
     pygame.display.flip()
-    if has_key and math.dist(player_pos, end_pos) == 0:
-       exit()
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+            exit()
