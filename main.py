@@ -138,15 +138,18 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
-        if event.type == pygame.KEYDOWN and full_vision:
-            if event.key == pygame.K_1:
-                maze = maze1
-                portals = portals1
-                prepare_places()
-            elif event.key == pygame.K_2:
-                maze = maze2
-                portals = portals2
-                prepare_places()
+        if event.type == pygame.KEYDOWN:
+            if full_vision:
+                if event.key == pygame.K_1:
+                    maze = maze1
+                    portals = portals1
+                    prepare_places()
+                elif event.key == pygame.K_2:
+                    maze = maze2
+                    portals = portals2
+                    prepare_places()
+            if event.key == pygame.K_ESCAPE:
+                exit()
     moved = False
     if check_input('up') and (not moved) and frames_since_last_move >= 10:
         player_pos[1] -= 1
