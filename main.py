@@ -159,6 +159,7 @@ while True:
             moved = False
         elif full_vision:
             full_vision = False
+            pygame.mouse.set_visible(False)
         if moved:
             frames_since_last_move = 0
     elif check_input('down') and (not moved) and frames_since_last_move >= 10:
@@ -169,6 +170,7 @@ while True:
             moved = False
         elif full_vision:
             full_vision = False
+            pygame.mouse.set_visible(False)
         if moved:
             frames_since_last_move = 0
     if check_input('left') and (not moved) and frames_since_last_move >= 10:
@@ -179,6 +181,7 @@ while True:
             moved = False
         elif full_vision:
             full_vision = False
+            pygame.mouse.set_visible(False)
         if moved:
             frames_since_last_move = 0
     elif check_input('right') and (not moved) and frames_since_last_move >= 10:
@@ -189,6 +192,7 @@ while True:
             moved = False
         elif full_vision:
             full_vision = False
+            pygame.mouse.set_visible(False)
         if moved:
             frames_since_last_move = 0
     if player_pos == key_pos:
