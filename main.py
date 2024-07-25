@@ -55,7 +55,8 @@ def check_input(control_scheme):
     return False
 
 # Load assets
-wall = pygame.image.load('images/maze.png')
+maze1 = pygame.image.load('images/maze1.png')
+maze2 = pygame.image.load('images/maze2.png')
 vignette = pygame.image.load('images/vignette.png')
 end = pygame.image.load('images/end.png')
 key = pygame.image.load('images/key.png')
@@ -64,52 +65,66 @@ player = pygame.image.load('images/player.png')
 player_key = pygame.image.load('images/player_key.png')
 win = pygame.image.load('images/win.png')
 
-portals = {
-   (1,33): (42,17),
-   (41,17): (1,34),
-   (1,9): (50,31),
-   (49,31): (1,8),
+portals1 = {
+   (1,33): ((42,17),(0,148,255),(255,134,53)),
+   (41,17): ((1,34),(255,134,53),(0,148,255)),
+   (1,9): ((50,31),(124,255,140),(235,122,255)),
+   (49,31): ((1,8),(235,122,255),(124,255,140)),
 }
+portals2 = {
+   (1,1): ((50,2),(0,148,255),(255,134,53)),
+   (50,1): ((50,36),(255,134,53),(124,255,140)),
+   (50,37): ((1,36),(124,255,140),(235,122,255)),
+   (1,37): ((1,2),(235,122,255),(0,148,255)),
+}
+portals = portals1
+maze = maze1
 
-free_spaces = []
-for x in range(wall.get_width()):
-    for y in range(wall.get_height()):
-        if wall.get_at((x,y)) == (255,255,255,255):
-            free_spaces.append((x,y))
+free_spaces = None
+player_pos = None
+end_pos = None
+key_pos = None
+def prepare_places():
+    global free_spaces,player_pos,end_pos,key_pos
+    free_spaces = []
+    for x in range(maze.get_width()):
+        for y in range(maze.get_height()):
+            if maze.get_at((x,y)) == (255,255,255,255):
+                free_spaces.append((x,y))
 
-player_pos = list(random.choice(free_spaces))
-while True:
     player_pos = list(random.choice(free_spaces))
-    exit_loop = True
-    for portal_pos in portals.keys():
-        if math.dist(portal_pos, player_pos) <= 10:
-            exit_loop = False
-            break
-    if exit_loop:
-        break
-end_pos = player_pos
-while True:
-    end_pos = list(random.choice(free_spaces))
-    if math.dist(player_pos, end_pos) > 10:
+    while True:
+        player_pos = list(random.choice(free_spaces))
         exit_loop = True
         for portal_pos in portals.keys():
-            if math.dist(portal_pos, end_pos) <= 10:
+            if math.dist(portal_pos, player_pos) <= 15:
                 exit_loop = False
                 break
         if exit_loop:
             break
-key_pos = player_pos
-while True:
-    key_pos = list(random.choice(free_spaces))
-    if math.dist(player_pos, key_pos) > 10 and math.dist(end_pos, key_pos) > 10:
-        exit_loop = True
-        for portal_pos in portals.keys():
-            if math.dist(portal_pos, key_pos) <= 10:
-                exit_loop = False
+    end_pos = player_pos
+    while True:
+        end_pos = list(random.choice(free_spaces))
+        if math.dist(player_pos, end_pos) > 15:
+            exit_loop = True
+            for portal_pos in portals.keys():
+                if math.dist(portal_pos, end_pos) <= 15:
+                    exit_loop = False
+                    break
+            if exit_loop:
                 break
-        if exit_loop:
-            break
-
+    key_pos = player_pos
+    while True:
+        key_pos = list(random.choice(free_spaces))
+        if math.dist(player_pos, key_pos) > 15 and math.dist(end_pos, key_pos) > 15:
+            exit_loop = True
+            for portal_pos in portals.keys():
+                if math.dist(portal_pos, key_pos) <= 15:
+                    exit_loop = False
+                    break
+            if exit_loop:
+                break
+prepare_places()
 has_key = False
 
 full_vision = True
@@ -123,11 +138,20 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
+        if event.type == pygame.KEYDOWN and full_vision:
+            if event.key == pygame.K_1:
+                maze = maze1
+                portals = portals1
+                prepare_places()
+            elif event.key == pygame.K_2:
+                maze = maze2
+                portals = portals2
+                prepare_places()
     moved = False
     if check_input('up') and (not moved) and frames_since_last_move >= 10:
         player_pos[1] -= 1
         moved = True
-        if wall.get_at(player_pos) == (0,0,0,255):
+        if maze.get_at(player_pos) == (0,0,0,255):
             player_pos[1] += 1
             moved = False
         elif full_vision:
@@ -137,7 +161,7 @@ while True:
     elif check_input('down') and (not moved) and frames_since_last_move >= 10:
         player_pos[1] += 1 
         moved = True
-        if wall.get_at(player_pos) == (0,0,0,255):
+        if maze.get_at(player_pos) == (0,0,0,255):
             player_pos[1] -= 1
             moved = False
         elif full_vision:
@@ -147,7 +171,7 @@ while True:
     if check_input('left') and (not moved) and frames_since_last_move >= 10:
         player_pos[0] -= 1 
         moved = True
-        if wall.get_at(player_pos) == (0,0,0,255):
+        if maze.get_at(player_pos) == (0,0,0,255):
             player_pos[0] += 1
             moved = False
         elif full_vision:
@@ -157,7 +181,7 @@ while True:
     elif check_input('right') and (not moved) and frames_since_last_move >= 10:
         player_pos[0] += 1
         moved = True
-        if wall.get_at(player_pos) == (0,0,0,255):
+        if maze.get_at(player_pos) == (0,0,0,255):
             player_pos[0] -= 1
             moved = False
         elif full_vision:
@@ -170,24 +194,27 @@ while True:
         key_pos = player_pos
     
     if tuple(player_pos) in list(portals.keys()):
-       player_pos = list(portals[tuple(player_pos)])
+       player_pos = list(portals[tuple(player_pos)][0])
 
-    display.blit(pygame.transform.scale(wall,(display_width,display_height)),(0,0))
-    end_rect = vignette.get_rect()
+    display.blit(pygame.transform.scale(maze,(display_width,display_height)),(0,0))
+    end_rect = end.get_rect()
     end_rect.topleft = (end_pos[0]*20,end_pos[1]*20)
     display.blit(end,end_rect)
-    for portal_pos in portals.keys():
-        portal_rect = vignette.get_rect()
+    for portal_pos,data in portals.items():
+        portal_rect = portal.get_rect()
         portal_rect.topleft = (portal_pos[0]*20,portal_pos[1]*20)
+        portal_inner_rect  = pygame.Rect(portal_rect.left+5,portal_rect.top+5,10,10)
+        pygame.draw.rect(display,data[1],portal_rect)
+        pygame.draw.rect(display,data[2],portal_inner_rect)
         display.blit(portal,portal_rect)
-    player_rect = vignette.get_rect()
+    player_rect = player.get_rect()
     player_rect.topleft = (player_pos[0]*20,player_pos[1]*20)
     if has_key:
         display.blit(player_key,player_rect)
     else:
         display.blit(player,player_rect)
     if not has_key:
-        key_rect = vignette.get_rect()
+        key_rect = key.get_rect()
         key_rect.topleft = (key_pos[0]*20,key_pos[1]*20)
         display.blit(key,key_rect)
     if has_key and math.dist(player_pos, end_pos) == 0:
