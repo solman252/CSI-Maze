@@ -1,14 +1,18 @@
 # Imports
+from genericpath import isfile
 import random
 import pygame
 import math
+import os
+from json import load as jsonLoad
+from json import dump as jsonDump
 
 # Inits
 pygame.init()
 clock = pygame.time.Clock()
 
 # Create window
-(display_width,display_height) = (1040,780)
+(display_width,display_height) = (1040,780+113)
 display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Memory-Maze Demo')
 # icon = pygame.image.load('images/gui/icon.png').convert_alpha()
@@ -54,6 +58,18 @@ def check_input(control_scheme):
             return True
     return False
 
+def getNums(num: int, length: int,color=(255,255,255)):
+    full_num = str(round(num,1))
+    full_num = (length-len(full_num))*'0'+full_num
+    i = 0
+    text = pygame.Surface((21*len(full_num)+3*len(full_num)-3,21),pygame.SRCALPHA)
+    for c in full_num:
+        char = pygame.image.load(f'images/text/{c}.png').convert_alpha()
+        char.fill(color, special_flags=pygame.BLEND_RGB_MULT)
+        text.blit(char, (21*i+3*i,0))
+        i += 1
+    return text
+
 # Load assets
 maze1 = pygame.image.load('images/maze1.png')
 maze2 = pygame.image.load('images/maze2.png')
@@ -64,6 +80,8 @@ portal = pygame.image.load('images/portal.png')
 player = pygame.image.load('images/player.png')
 player_key = pygame.image.load('images/player_key.png')
 win = pygame.image.load('images/win.png')
+study_text = pygame.image.load('images/text/study.png')
+runthrough_text = pygame.image.load('images/text/run-through.png')
 
 portals1 = {
    (1,33): ((42,17),(0,148,255),(255,134,53)),
@@ -125,9 +143,24 @@ def prepare_places():
             if exit_loop:
                 break
 prepare_places()
+
+first_input = False
+while first_input == False:
+    clock.tick(60)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            exit()
+        if event.type == pygame.KEYDOWN:
+            first_input = True
+            break
+
 has_key = False
 
 full_vision = True
+study_time_start = pygame.time.get_ticks()
+study_time = 0
+runthrough_time_start = 0
+runthrough_time = 0
 
 frames_since_last_move = 10
 
@@ -150,6 +183,10 @@ while True:
                     prepare_places()
             if event.key == pygame.K_ESCAPE:
                 exit()
+            if (not full_vision) and event.key == pygame.K_k:
+                player_pos = key_pos
+            if (not full_vision) and event.key == pygame.K_g:
+                player_pos = end_pos
     moved = False
     if check_input('up') and (not moved) and frames_since_last_move >= 10:
         player_pos[1] -= 1
@@ -160,6 +197,7 @@ while True:
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
+            runthrough_time_start = pygame.time.get_ticks()
         if moved:
             frames_since_last_move = 0
     elif check_input('down') and (not moved) and frames_since_last_move >= 10:
@@ -171,6 +209,7 @@ while True:
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
+            runthrough_time_start = pygame.time.get_ticks()
         if moved:
             frames_since_last_move = 0
     if check_input('left') and (not moved) and frames_since_last_move >= 10:
@@ -182,6 +221,7 @@ while True:
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
+            runthrough_time_start = pygame.time.get_ticks()
         if moved:
             frames_since_last_move = 0
     elif check_input('right') and (not moved) and frames_since_last_move >= 10:
@@ -193,6 +233,7 @@ while True:
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
+            runthrough_time_start = pygame.time.get_ticks()
         if moved:
             frames_since_last_move = 0
     if player_pos == key_pos:
@@ -203,7 +244,7 @@ while True:
     if tuple(player_pos) in list(portals.keys()):
        player_pos = list(portals[tuple(player_pos)][0])
 
-    display.blit(pygame.transform.scale(maze,(display_width,display_height)),(0,0))
+    display.blit(pygame.transform.scale(maze,(1040,780)),(0,0))
     end_rect = end.get_rect()
     end_rect.topleft = (end_pos[0]*20,end_pos[1]*20)
     display.blit(end,end_rect)
@@ -236,8 +277,60 @@ while True:
         vignette_rect.centery = player_pos[1]*20+10
         darkness.blit(vignette,vignette_rect,special_flags=pygame.BLEND_RGBA_MIN)
         display.blit(darkness,(0,0))
+    pygame.draw.rect(display,(50,50,50,255),pygame.Rect(0,780,1040,113))
+    pygame.draw.rect(display,(100,100,100,255),pygame.Rect(5,785,1030,103))
+    display.blit(study_text,(5+20,785+20))
+    display.blit(runthrough_text,(1040-(5+20)-runthrough_text.get_width(),785+20))
+    if not full_vision:
+        runthrough_time = pygame.time.get_ticks() - runthrough_time_start
+    else:
+        runthrough_time = 0
+        study_time = pygame.time.get_ticks() - study_time_start
+    study_time_img = getNums(study_time/1000,3)
+    study_time_rect = study_time_img.get_rect()
+    study_time_rect.centerx = 5+20+(study_text.get_width()/2)
+    study_time_rect.top = 785+20+21*2
+    display.blit(study_time_img,study_time_rect)
+    runthrough_time_img = getNums(runthrough_time/1000,3)
+    runthrough_time_rect = runthrough_time_img.get_rect()
+    runthrough_time_rect.centerx = 1040-(5+20+(runthrough_text.get_width()/2))
+    runthrough_time_rect.top = 785+20+21*2
+    display.blit(runthrough_time_img,runthrough_time_rect)
     pygame.display.flip()
+
+if not os.path.isfile('scores.json'):
+    with open('scores.json','w') as f:
+        f.write('{}')
+        f.close()
+scores = dict(jsonLoad(open('scores.json','r')))
+name = ''
+runthrough_time = pygame.time.get_ticks() - runthrough_time_start
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+        if event.type == pygame.QUIT:
             exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                if name != '':
+                    print(name+':')
+                    print(f'  study: {study_time/1000} seconds')
+                    print(f'  runthrough: {runthrough_time/1000} seconds')
+                    if name in scores.keys():
+                        if scores[name][0] > study_time/1000:
+                            print(f'  beat study record! (old: {scores[name][0]} seconds)')
+                            scores[name][0] = study_time/1000
+                        if scores[name][1] > runthrough_time/1000:
+                            print(f'  beat runthrough record! (old: {scores[name][1]} seconds)')
+                            scores[name][1] = runthrough_time/1000
+                    else:
+                        scores[name] = [None,None]
+                        scores[name][0] = study_time/1000
+                        print('  beat study record! (old: none)')
+                        scores[name][1] = runthrough_time/1000
+                        print('  beat runthrough record! (old: none)')
+                    jsonDump(scores,open('scores.json','w'))
+                    exit()
+            elif event.key == pygame.K_BACKSPACE:
+                name = name[:-1]
+            elif event.unicode in '1234567890_qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM':
+                name += event.unicode.lower()
