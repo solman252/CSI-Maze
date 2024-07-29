@@ -1,11 +1,11 @@
 # Imports
-from genericpath import isfile
 import random
 import pygame
 import math
 import os
 from json import load as jsonLoad
 from json import dump as jsonDump
+from easygui import enterbox
 
 # Inits
 pygame.init()
@@ -15,8 +15,6 @@ clock = pygame.time.Clock()
 (display_width,display_height) = (1040,780+113)
 display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Memory-Maze Demo')
-# icon = pygame.image.load('images/gui/icon.png').convert_alpha()
-# pygame.display.set_icon(icon)
 
 # Timers
 class Timer:
@@ -82,6 +80,8 @@ player_key = pygame.image.load('images/player_key.png')
 win = pygame.image.load('images/win.png')
 study_text = pygame.image.load('images/text/study.png')
 runthrough_text = pygame.image.load('images/text/run-through.png')
+record_text = pygame.image.load('images/text/record.png')
+none_text = pygame.image.load('images/text/none.png')
 
 portals1 = {
    (1,33): ((42,17),(0,148,255),(255,134,53)),
@@ -144,15 +144,32 @@ def prepare_places():
                 break
 prepare_places()
 
-first_input = False
-while first_input == False:
-    clock.tick(60)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            exit()
-        if event.type == pygame.KEYDOWN:
-            first_input = True
-            break
+player_name = ''
+msg = ''
+while player_name == '':
+    inp = enterbox('Your name must be between 1 and 16 characters, and can\'t contain special characters.'+msg,'Please input your name below.',strip=True)
+    msg = ''
+    if inp == None:
+        exit()
+    elif len(inp) > 16:
+        msg = '\n\nYour name can\'t be longer than 16 characters.'
+    elif inp == '':
+        msg = '\n\nYou must input a name.'
+    else:
+        for c in inp.lower():
+            if not (c in '1234567890_qwertyuiopasdfghjklzxcvbnm '):
+                msg = '\n\nYour name can\'t contain special characters.'
+                break
+    if msg == '':
+        player_name = inp.lower()
+
+if not os.path.isfile('scores.json'):
+    with open('scores.json','w') as f:
+        f.write('{}')
+        f.close()
+scores = dict(jsonLoad(open('scores.json','r')))
+if not (player_name in scores.keys()):
+    scores[player_name] = []
 
 has_key = False
 
@@ -183,10 +200,6 @@ while True:
                     prepare_places()
             if event.key == pygame.K_ESCAPE:
                 exit()
-            if (not full_vision) and event.key == pygame.K_k:
-                player_pos = key_pos
-            if (not full_vision) and event.key == pygame.K_g:
-                player_pos = end_pos
     moved = False
     if check_input('up') and (not moved) and frames_since_last_move >= 10:
         player_pos[1] -= 1
@@ -281,6 +294,8 @@ while True:
     pygame.draw.rect(display,(100,100,100,255),pygame.Rect(5,785,1030,103))
     display.blit(study_text,(5+20,785+20))
     display.blit(runthrough_text,(1040-(5+20)-runthrough_text.get_width(),785+20))
+    display.blit(record_text,(5+20+study_text.get_width()+21,785+20))
+    display.blit(record_text,(1040-(5+20)-runthrough_text.get_width()-record_text.get_width()-21,785+20))
     if not full_vision:
         runthrough_time = pygame.time.get_ticks() - runthrough_time_start
     else:
@@ -291,46 +306,45 @@ while True:
     study_time_rect.centerx = 5+20+(study_text.get_width()/2)
     study_time_rect.top = 785+20+21*2
     display.blit(study_time_img,study_time_rect)
+
+    if scores[player_name] != []:
+        study_record_time_img = getNums(scores[player_name][0],3,(204,170,0))
+        study_record_time_rect = study_record_time_img.get_rect()
+        study_record_time_rect.centerx = 5+20+study_text.get_width()+21+(record_text.get_width()/2)
+        study_record_time_rect.top = 785+20+21*2
+        display.blit(study_record_time_img,study_record_time_rect)
+
+        runthrough_record_time_img = getNums(scores[player_name][1],3,(204,170,0))
+        runthrough_record_time_rect = runthrough_record_time_img.get_rect()
+        runthrough_record_time_rect.centerx = 1040-(5+20+runthrough_text.get_width()+21+(record_text.get_width()/2))
+        runthrough_record_time_rect.top = 785+20+21*2
+        display.blit(runthrough_record_time_img,runthrough_record_time_rect)
+    else:
+        none_text_rect = none_text.get_rect()
+        none_text_rect.centerx = 5+20+study_text.get_width()+21+(record_text.get_width()/2)
+        none_text_rect.top = 785+20+21*2
+        display.blit(none_text,none_text_rect)
+        none_text_rect.centerx = 1040-(5+20+runthrough_text.get_width()+21+(record_text.get_width()/2))
+        display.blit(none_text,none_text_rect)
+
     runthrough_time_img = getNums(runthrough_time/1000,3)
     runthrough_time_rect = runthrough_time_img.get_rect()
     runthrough_time_rect.centerx = 1040-(5+20+(runthrough_text.get_width()/2))
     runthrough_time_rect.top = 785+20+21*2
     display.blit(runthrough_time_img,runthrough_time_rect)
+
     pygame.display.flip()
 
-if not os.path.isfile('scores.json'):
-    with open('scores.json','w') as f:
-        f.write('{}')
-        f.close()
-scores = dict(jsonLoad(open('scores.json','r')))
-name = ''
 runthrough_time = pygame.time.get_ticks() - runthrough_time_start
+if scores[player_name] != []:
+    if scores[player_name][0] > study_time/1000:
+        scores[player_name][0] = study_time/1000
+    if scores[player_name][1] > runthrough_time/1000:
+        scores[player_name][1] = runthrough_time/1000
+else:
+    scores[player_name] = [study_time/1000,runthrough_time/1000]
+jsonDump(scores,open('scores.json','w'))
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
             exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:
-                if name != '':
-                    print(name+':')
-                    print(f'  study: {study_time/1000} seconds')
-                    print(f'  runthrough: {runthrough_time/1000} seconds')
-                    if name in scores.keys():
-                        if scores[name][0] > study_time/1000:
-                            print(f'  beat study record! (old: {scores[name][0]} seconds)')
-                            scores[name][0] = study_time/1000
-                        if scores[name][1] > runthrough_time/1000:
-                            print(f'  beat runthrough record! (old: {scores[name][1]} seconds)')
-                            scores[name][1] = runthrough_time/1000
-                    else:
-                        scores[name] = [None,None]
-                        scores[name][0] = study_time/1000
-                        print('  beat study record! (old: none)')
-                        scores[name][1] = runthrough_time/1000
-                        print('  beat runthrough record! (old: none)')
-                    jsonDump(scores,open('scores.json','w'))
-                    exit()
-            elif event.key == pygame.K_BACKSPACE:
-                name = name[:-1]
-            elif event.unicode in '1234567890_qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM':
-                name += event.unicode.lower()
