@@ -56,6 +56,11 @@ def check_input(control_scheme):
             return True
     return False
 
+def lerp(_v1,_v2,time):
+    v1 = pygame.Vector2(_v1[0],_v1[1])
+    v2 = pygame.Vector2(_v2[0],_v2[1])
+    return v1 * (1 - time) + v2 * time
+
 def getNums(num: int, length: int,color=(255,255,255)):
     full_num = str(round(num,1))
     full_num = (length-len(full_num))*'0'+full_num
@@ -100,10 +105,11 @@ maze = maze1
 
 free_spaces = None
 player_pos = None
+new_player_pos = None
 end_pos = None
 key_pos = None
 def prepare_places():
-    global free_spaces,player_pos,end_pos,key_pos
+    global free_spaces,player_pos,end_pos,key_pos,new_player_pos
     free_spaces = []
     for x in range(maze.get_width()):
         for y in range(maze.get_height()):
@@ -120,6 +126,7 @@ def prepare_places():
                 break
         if exit_loop:
             break
+    new_player_pos = player_pos.copy()
     end_pos = player_pos
     while True:
         end_pos = list(random.choice(free_spaces))
@@ -194,61 +201,73 @@ while True:
                     maze = maze1
                     portals = portals1
                     prepare_places()
+                    study_time_start = pygame.time.get_ticks()
                 elif event.key == pygame.K_2:
                     maze = maze2
                     portals = portals2
                     prepare_places()
+                    study_time_start = pygame.time.get_ticks()
             if event.key == pygame.K_ESCAPE:
                 exit()
     moved = False
     if check_input('up') and (not moved) and frames_since_last_move >= 10:
-        player_pos[1] -= 1
+        new_player_pos = player_pos.copy()
+        new_player_pos[0] = round(new_player_pos[0])
+        new_player_pos[1] = round(new_player_pos[1])
+        new_player_pos[1] -= 1
         moved = True
-        if maze.get_at(player_pos) == (0,0,0,255):
-            player_pos[1] += 1
+        if maze.get_at(new_player_pos) == (0,0,0,255):
+            new_player_pos[1] += 1
             moved = False
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
             runthrough_time_start = pygame.time.get_ticks()
-        if moved:
-            frames_since_last_move = 0
     elif check_input('down') and (not moved) and frames_since_last_move >= 10:
-        player_pos[1] += 1 
+        new_player_pos = player_pos.copy()
+        new_player_pos[0] = round(new_player_pos[0])
+        new_player_pos[1] = round(new_player_pos[1])
+        new_player_pos[1] += 1 
         moved = True
-        if maze.get_at(player_pos) == (0,0,0,255):
-            player_pos[1] -= 1
+        if maze.get_at(new_player_pos) == (0,0,0,255):
+            new_player_pos[1] -= 1
             moved = False
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
             runthrough_time_start = pygame.time.get_ticks()
-        if moved:
-            frames_since_last_move = 0
     if check_input('left') and (not moved) and frames_since_last_move >= 10:
-        player_pos[0] -= 1 
+        new_player_pos = player_pos.copy()
+        new_player_pos[0] = round(new_player_pos[0])
+        new_player_pos[1] = round(new_player_pos[1])
+        new_player_pos[0] -= 1 
         moved = True
-        if maze.get_at(player_pos) == (0,0,0,255):
-            player_pos[0] += 1
+        if maze.get_at(new_player_pos) == (0,0,0,255):
+            new_player_pos[0] += 1
             moved = False
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
             runthrough_time_start = pygame.time.get_ticks()
-        if moved:
-            frames_since_last_move = 0
     elif check_input('right') and (not moved) and frames_since_last_move >= 10:
-        player_pos[0] += 1
+        new_player_pos = player_pos.copy()
+        new_player_pos[0] = round(new_player_pos[0])
+        new_player_pos[1] = round(new_player_pos[1])
+        new_player_pos[0] += 1
         moved = True
-        if maze.get_at(player_pos) == (0,0,0,255):
-            player_pos[0] -= 1
+        if maze.get_at(new_player_pos) == (0,0,0,255):
+            new_player_pos[0] -= 1
             moved = False
         elif full_vision:
             full_vision = False
             pygame.mouse.set_visible(False)
             runthrough_time_start = pygame.time.get_ticks()
-        if moved:
-            frames_since_last_move = 0
+    if moved:
+        frames_since_last_move = 0
+    if not (new_player_pos == player_pos):
+        player_pos = lerp(player_pos,new_player_pos,0.1*frames_since_last_move)
+        player_pos = [player_pos.x,player_pos.y]
+
     if player_pos == key_pos:
         has_key = True
     elif has_key:
