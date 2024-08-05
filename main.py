@@ -56,9 +56,7 @@ def check_input(control_scheme):
             return True
     return False
 
-def lerp(_v1,_v2,time):
-    v1 = pygame.Vector2(_v1[0],_v1[1])
-    v2 = pygame.Vector2(_v2[0],_v2[1])
+def lerp(v1,v2,time):
     return v1 * (1 - time) + v2 * time
 
 def getNums(num: int, length: int,color=(255,255,255)):
@@ -120,10 +118,10 @@ def prepare_places():
     while True:
         player_pos = list(random.choice(free_spaces))
         exit_loop = True
-        for portal_pos in portals.keys():
-            if math.dist(portal_pos, player_pos) <= 15:
-                exit_loop = False
-                break
+        # for portal_pos in portals.keys():
+        #     if math.dist(portal_pos, player_pos) <= 15:
+        #         exit_loop = False
+        #         break
         if exit_loop:
             break
     new_player_pos = player_pos.copy()
@@ -187,6 +185,9 @@ runthrough_time_start = 0
 runthrough_time = 0
 
 frames_since_last_move = 10
+portal_frames = 0
+portaling = False
+current_portal = None
 
 while True:
     clock.tick(60)
@@ -209,63 +210,64 @@ while True:
                     study_time_start = pygame.time.get_ticks()
             if event.key == pygame.K_ESCAPE:
                 exit()
-    moved = False
-    if check_input('up') and (not moved) and frames_since_last_move >= 10:
-        new_player_pos = player_pos.copy()
-        new_player_pos[0] = round(new_player_pos[0])
-        new_player_pos[1] = round(new_player_pos[1])
-        new_player_pos[1] -= 1
-        moved = True
-        if maze.get_at(new_player_pos) == (0,0,0,255):
-            new_player_pos[1] += 1
-            moved = False
-        elif full_vision:
-            full_vision = False
-            pygame.mouse.set_visible(False)
-            runthrough_time_start = pygame.time.get_ticks()
-    elif check_input('down') and (not moved) and frames_since_last_move >= 10:
-        new_player_pos = player_pos.copy()
-        new_player_pos[0] = round(new_player_pos[0])
-        new_player_pos[1] = round(new_player_pos[1])
-        new_player_pos[1] += 1 
-        moved = True
-        if maze.get_at(new_player_pos) == (0,0,0,255):
+    if not portaling:
+        moved = False
+        if check_input('up') and (not moved) and frames_since_last_move >= 10:
+            new_player_pos = player_pos.copy()
+            new_player_pos[0] = round(new_player_pos[0])
+            new_player_pos[1] = round(new_player_pos[1])
             new_player_pos[1] -= 1
-            moved = False
-        elif full_vision:
-            full_vision = False
-            pygame.mouse.set_visible(False)
-            runthrough_time_start = pygame.time.get_ticks()
-    if check_input('left') and (not moved) and frames_since_last_move >= 10:
-        new_player_pos = player_pos.copy()
-        new_player_pos[0] = round(new_player_pos[0])
-        new_player_pos[1] = round(new_player_pos[1])
-        new_player_pos[0] -= 1 
-        moved = True
-        if maze.get_at(new_player_pos) == (0,0,0,255):
+            moved = True
+            if maze.get_at(new_player_pos) == (0,0,0,255):
+                new_player_pos[1] += 1
+                moved = False
+            elif full_vision:
+                full_vision = False
+                pygame.mouse.set_visible(False)
+                runthrough_time_start = pygame.time.get_ticks()
+        elif check_input('down') and (not moved) and frames_since_last_move >= 10:
+            new_player_pos = player_pos.copy()
+            new_player_pos[0] = round(new_player_pos[0])
+            new_player_pos[1] = round(new_player_pos[1])
+            new_player_pos[1] += 1 
+            moved = True
+            if maze.get_at(new_player_pos) == (0,0,0,255):
+                new_player_pos[1] -= 1
+                moved = False
+            elif full_vision:
+                full_vision = False
+                pygame.mouse.set_visible(False)
+                runthrough_time_start = pygame.time.get_ticks()
+        if check_input('left') and (not moved) and frames_since_last_move >= 10:
+            new_player_pos = player_pos.copy()
+            new_player_pos[0] = round(new_player_pos[0])
+            new_player_pos[1] = round(new_player_pos[1])
+            new_player_pos[0] -= 1 
+            moved = True
+            if maze.get_at(new_player_pos) == (0,0,0,255):
+                new_player_pos[0] += 1
+                moved = False
+            elif full_vision:
+                full_vision = False
+                pygame.mouse.set_visible(False)
+                runthrough_time_start = pygame.time.get_ticks()
+        elif check_input('right') and (not moved) and frames_since_last_move >= 10:
+            new_player_pos = player_pos.copy()
+            new_player_pos[0] = round(new_player_pos[0])
+            new_player_pos[1] = round(new_player_pos[1])
             new_player_pos[0] += 1
-            moved = False
-        elif full_vision:
-            full_vision = False
-            pygame.mouse.set_visible(False)
-            runthrough_time_start = pygame.time.get_ticks()
-    elif check_input('right') and (not moved) and frames_since_last_move >= 10:
-        new_player_pos = player_pos.copy()
-        new_player_pos[0] = round(new_player_pos[0])
-        new_player_pos[1] = round(new_player_pos[1])
-        new_player_pos[0] += 1
-        moved = True
-        if maze.get_at(new_player_pos) == (0,0,0,255):
-            new_player_pos[0] -= 1
-            moved = False
-        elif full_vision:
-            full_vision = False
-            pygame.mouse.set_visible(False)
-            runthrough_time_start = pygame.time.get_ticks()
+            moved = True
+            if maze.get_at(new_player_pos) == (0,0,0,255):
+                new_player_pos[0] -= 1
+                moved = False
+            elif full_vision:
+                full_vision = False
+                pygame.mouse.set_visible(False)
+                runthrough_time_start = pygame.time.get_ticks()
     if moved:
         frames_since_last_move = 0
     if not (new_player_pos == player_pos):
-        player_pos = lerp(player_pos,new_player_pos,0.1*frames_since_last_move)
+        player_pos = lerp(pygame.Vector2(player_pos),pygame.Vector2(new_player_pos),0.1*frames_since_last_move)
         player_pos = [player_pos.x,player_pos.y]
 
     if player_pos == key_pos:
@@ -274,41 +276,69 @@ while True:
         key_pos = player_pos
     
     if tuple(player_pos) in list(portals.keys()):
-       player_pos = list(portals[tuple(player_pos)][0])
-
-    display.blit(pygame.transform.scale(maze,(1040,780)),(0,0))
-    end_rect = end.get_rect()
-    end_rect.topleft = (end_pos[0]*20,end_pos[1]*20)
-    display.blit(end,end_rect)
-    for portal_pos,data in portals.items():
-        portal_rect = portal.get_rect()
-        portal_rect.topleft = (portal_pos[0]*20,portal_pos[1]*20)
-        portal_inner_rect  = pygame.Rect(portal_rect.left+5,portal_rect.top+5,10,10)
-        pygame.draw.rect(display,data[1],portal_rect)
-        pygame.draw.rect(display,data[2],portal_inner_rect)
-        display.blit(portal,portal_rect)
-    player_rect = player.get_rect()
-    player_rect.topleft = (player_pos[0]*20,player_pos[1]*20)
-    if has_key:
-        display.blit(player_key,player_rect)
+        current_portal = portals[tuple(player_pos)]
+        player_pos = list(current_portal[0])
+        new_player_pos = player_pos.copy()
+        portaling = True
+        portal_frames = 0
+    if portaling:
+        portal_screen = pygame.Surface(win.get_size(),pygame.SRCALPHA)
+        if portal_frames != 30:
+            portal_overlay = pygame.image.load(f'images/portal_transition/color_a/{portal_frames//3}.png').convert_alpha()
+        else:
+            portal_overlay = pygame.image.load('images/portal_transition/color_a/0.png').convert_alpha()
+        assert portal_overlay
+        portal_overlay.fill(current_portal[1],special_flags=pygame.BLEND_RGB_MULT)
+        portal_screen.blit(portal_overlay,(0,0))
+        if portal_frames < 30:
+            portal_overlay = pygame.image.load(f'images/portal_transition/color_b/{portal_frames//3}.png').convert_alpha()
+        else:
+            portal_overlay = pygame.image.load('images/portal_transition/color_b/0.png').convert_alpha()
+        assert portal_overlay
+        portal_overlay.fill(current_portal[2],special_flags=pygame.BLEND_RGB_MULT)
+        portal_screen.blit(portal_overlay,(0,0))
+        if portal_frames <= 10:
+            portal_screen.set_alpha(lerp(0,255,0.1*portal_frames))
+        elif portal_frames >= 20:
+            portal_screen.set_alpha(255-lerp(0,255,0.1*(portal_frames-20)))
+        display.blit(portal_screen,(0,0))
+        portal_frames += 1
+        if portal_frames >= 30:
+            portaling = False
     else:
-        display.blit(player,player_rect)
-    if not has_key:
-        key_rect = key.get_rect()
-        key_rect.topleft = (key_pos[0]*20,key_pos[1]*20)
-        display.blit(key,key_rect)
-    if has_key and math.dist(player_pos, end_pos) == 0:
-       display.blit(win,(0,0))
-       pygame.display.flip()
-       break
-    if not full_vision:
-        darkness = pygame.Surface(display.get_size(),pygame.SRCALPHA)
-        darkness.fill('black')
-        vignette_rect = vignette.get_rect()
-        vignette_rect.centerx = player_pos[0]*20+10
-        vignette_rect.centery = player_pos[1]*20+10
-        darkness.blit(vignette,vignette_rect,special_flags=pygame.BLEND_RGBA_MIN)
-        display.blit(darkness,(0,0))
+        display.blit(pygame.transform.scale(maze,(1040,780)),(0,0))
+        end_rect = end.get_rect()
+        end_rect.topleft = (end_pos[0]*20,end_pos[1]*20)
+        display.blit(end,end_rect)
+        for portal_pos,data in portals.items():
+            portal_rect = portal.get_rect()
+            portal_rect.topleft = (portal_pos[0]*20,portal_pos[1]*20)
+            portal_inner_rect  = pygame.Rect(portal_rect.left+5,portal_rect.top+5,10,10)
+            pygame.draw.rect(display,data[1],portal_rect)
+            pygame.draw.rect(display,data[2],portal_inner_rect)
+            display.blit(portal,portal_rect)
+        player_rect = player.get_rect()
+        player_rect.topleft = (player_pos[0]*20,player_pos[1]*20)
+        if has_key:
+            display.blit(player_key,player_rect)
+        else:
+            display.blit(player,player_rect)
+        if not has_key:
+            key_rect = key.get_rect()
+            key_rect.topleft = (key_pos[0]*20,key_pos[1]*20)
+            display.blit(key,key_rect)
+        if has_key and math.dist(player_pos, end_pos) == 0:
+            display.blit(win,(0,0))
+            pygame.display.flip()
+            break
+        if not full_vision:
+            darkness = pygame.Surface(display.get_size(),pygame.SRCALPHA)
+            darkness.fill('black')
+            vignette_rect = vignette.get_rect()
+            vignette_rect.centerx = player_pos[0]*20+10
+            vignette_rect.centery = player_pos[1]*20+10
+            darkness.blit(vignette,vignette_rect,special_flags=pygame.BLEND_RGBA_MIN)
+            display.blit(darkness,(0,0))
     pygame.draw.rect(display,(50,50,50,255),pygame.Rect(0,780,1040,113))
     pygame.draw.rect(display,(100,100,100,255),pygame.Rect(5,785,1030,103))
     display.blit(study_text,(5+20,785+20))
