@@ -118,10 +118,10 @@ def prepare_places():
     while True:
         player_pos = list(random.choice(free_spaces))
         exit_loop = True
-        # for portal_pos in portals.keys():
-        #     if math.dist(portal_pos, player_pos) <= 15:
-        #         exit_loop = False
-        #         break
+        for portal_pos in portals.keys():
+            if math.dist(portal_pos, player_pos) <= 15:
+                exit_loop = False
+                break
         if exit_loop:
             break
     new_player_pos = player_pos.copy()
@@ -147,6 +147,7 @@ def prepare_places():
                     break
             if exit_loop:
                 break
+        break
 prepare_places()
 
 player_name = ''
@@ -270,10 +271,8 @@ while True:
         player_pos = lerp(pygame.Vector2(player_pos),pygame.Vector2(new_player_pos),0.1*frames_since_last_move)
         player_pos = [player_pos.x,player_pos.y]
 
-    if player_pos == key_pos:
+    if math.dist(player_pos, key_pos) < 0.5:
         has_key = True
-    elif has_key:
-        key_pos = player_pos
     
     if tuple(player_pos) in list(portals.keys()):
         current_portal = portals[tuple(player_pos)]
@@ -327,7 +326,7 @@ while True:
             key_rect = key.get_rect()
             key_rect.topleft = (key_pos[0]*20,key_pos[1]*20)
             display.blit(key,key_rect)
-        if has_key and math.dist(player_pos, end_pos) == 0:
+        if has_key and math.dist(player_pos, end_pos) < 0.5:
             display.blit(win,(0,0))
             pygame.display.flip()
             break
