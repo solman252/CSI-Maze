@@ -5,7 +5,7 @@ import math
 import os
 from json import load as jsonLoad
 from json import dump as jsonDump
-from easygui import enterbox
+from easygui import enterbox,choicebox
 
 # Inits
 pygame.init()
@@ -15,30 +15,8 @@ clock = pygame.time.Clock()
 (display_width,display_height) = (1040,780+113)
 display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Memory-Maze Demo')
-
-# Timers
-class Timer:
-    def __init__(self, duration) -> None:
-        self.duration = duration
-        self.finished = False
-
-        self.startTime = 0
-        self.active = False
-
-    def activate(self):
-        self.active = True
-        self.finished = False
-        self.startTime = pygame.time.get_ticks()
-
-    def deactivate(self):
-        self.active = False
-        self.finished = True
-        self.startTime = 0
-
-    def update(self):
-        currentTime = pygame.time.get_ticks()
-        if self.active and currentTime - self.startTime >= (self.duration*(1000/60)):
-            self.deactivate()
+icon = pygame.image.load('images/icon.png').convert_alpha()
+pygame.display.set_icon(icon)
 
 # Controls
 controls = {
@@ -46,7 +24,6 @@ controls = {
     'down': [pygame.K_DOWN],
     'left': [pygame.K_LEFT],
     'right': [pygame.K_RIGHT],
-    'interact': [pygame.K_c],
     'menu': [pygame.K_RETURN]
 }
 def check_input(control_scheme):
@@ -72,8 +49,6 @@ def getNums(num: int, length: int,color=(255,255,255)):
     return text
 
 # Load assets
-maze1 = pygame.image.load('images/maze1.png')
-maze2 = pygame.image.load('images/maze2.png')
 vignette = pygame.image.load('images/vignette.png')
 end = pygame.image.load('images/end.png')
 key = pygame.image.load('images/key.png')
@@ -86,20 +61,28 @@ runthrough_text = pygame.image.load('images/text/run-through.png')
 record_text = pygame.image.load('images/text/record.png')
 none_text = pygame.image.load('images/text/none.png')
 
-portals1 = {
-   (1,33): ((42,17),(0,148,255),(255,134,53)),
-   (41,17): ((1,34),(255,134,53),(0,148,255)),
-   (1,9): ((50,31),(124,255,140),(235,122,255)),
-   (49,31): ((1,8),(235,122,255),(124,255,140)),
+mazes = {
+    'Main Maze': {
+        'maze':pygame.image.load('mazes/Main Maze/maze.png'),
+        'portals': {
+            (1,33): ((42,17),(0,148,255),(255,134,53)),
+            (41,17): ((1,34),(255,134,53),(0,148,255)),
+            (1,9): ((50,31),(124,255,140),(235,122,255)),
+            (49,31): ((1,8),(235,122,255),(124,255,140)),
+        }
+    },
+    'Quarants Maze': {
+        'maze':pygame.image.load('mazes/Quarants Maze/maze.png'),
+        'portals': {
+            (1,1): ((27,18),(0,148,255),(255,134,53)),
+            (50,1): ((27,21),(255,134,53),(124,255,140)),
+            (50,37): ((24,21),(124,255,140),(235,122,255)),
+            (1,37): ((24,18),(235,122,255),(0,148,255)),
+        }
+    }
 }
-portals2 = {
-   (1,1): ((27,18),(0,148,255),(255,134,53)),
-   (50,1): ((27,21),(255,134,53),(124,255,140)),
-   (50,37): ((24,21),(124,255,140),(235,122,255)),
-   (1,37): ((24,18),(235,122,255),(0,148,255)),
-}
-portals = portals1
-maze = maze1
+maze = mazes['Main Maze']['maze']
+portals = mazes['Main Maze']['portals']
 
 free_spaces = None
 player_pos = None
@@ -147,7 +130,6 @@ def prepare_places():
                     break
             if exit_loop:
                 break
-        break
 prepare_places()
 
 player_name = ''
@@ -200,16 +182,13 @@ while True:
             exit()
         if event.type == pygame.KEYDOWN:
             if full_vision:
-                if event.key == pygame.K_1:
-                    maze = maze1
-                    portals = portals1
-                    prepare_places()
-                    study_time_start = pygame.time.get_ticks()
-                elif event.key == pygame.K_2:
-                    maze = maze2
-                    portals = portals2
-                    prepare_places()
-                    study_time_start = pygame.time.get_ticks()
+                if check_input('menu'):
+                    chosen = choicebox('', 'Please select a maze from below.', mazes.keys())
+                    if chosen:
+                        maze = mazes[chosen]['maze']
+                        portals = mazes[chosen]['portals']
+                        prepare_places()
+                        study_time_start = pygame.time.get_ticks()
             if event.key == pygame.K_ESCAPE:
                 exit()
     if not portaling:
