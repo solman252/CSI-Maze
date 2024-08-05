@@ -168,6 +168,7 @@ while player_name == '':
                 break
     if msg == '':
         player_name = inp.lower()
+pygame.display.set_caption(f'Memory-Maze Demo - {player_name.title()}')
 
 if not os.path.isfile('scores.json'):
     with open('scores.json','w') as f:
