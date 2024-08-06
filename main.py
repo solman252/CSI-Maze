@@ -1,12 +1,10 @@
 # Imports
-from genericpath import isfile
 import pygame
-import random
-import os
+from random import choice
+from os import listdir
+from os.path import isfile
 from json import load as jsonLoad, dump as jsonDump
 from easygui import enterbox, choicebox
-
-from pygame import Vector2 as v2
 
 # Inits
 pygame.init()
@@ -64,17 +62,17 @@ none_text = pygame.image.load('images/text/none.png')
 
 # load mazes
 mazes = {}
-for _name in os.listdir('mazes'):
+for _name in listdir('mazes'):
     name = _name.title()
     try:
-        if not os.path.isfile(f'mazes/{_name}/portals.json'):
+        if not isfile(f'mazes/{_name}/portals.json'):
             raise FileNotFoundError
         mazes[name] = {'maze':pygame.image.load(f'mazes/{_name}/maze.png'),'portals':[]}
         portals_data = jsonLoad(open(f'mazes/{_name}/portals.json','r'))
         for portal in portals_data:
             portal_data = {}
-            portal_data['pos'] = v2(portal['at'])
-            portal_data['to_pos'] = v2(portal['to'])
+            portal_data['pos'] = pygame.Vector2(portal['at'])
+            portal_data['to_pos'] = pygame.Vector2(portal['to'])
             portal_data['color'] = tuple(portal['color'])
             portal_data['to_color'] = tuple(portal['to_color'])
             mazes[name]['portals'].append(portal_data)
@@ -98,9 +96,9 @@ def prepare_places():
             if maze.get_at((x,y)) == (255,255,255,255):
                 free_spaces.append(pygame.Vector2(x,y))
 
-    player_pos = random.choice(free_spaces)
+    player_pos = choice(free_spaces)
     while True:
-        player_pos = random.choice(free_spaces)
+        player_pos = choice(free_spaces)
         exit_loop = True
         for portal in portals:
             if player_pos.distance_to(portal['pos']) <= 15:
@@ -111,7 +109,7 @@ def prepare_places():
     new_player_pos = player_pos.copy()
     end_pos = player_pos
     while True:
-        end_pos = random.choice(free_spaces)
+        end_pos = choice(free_spaces)
         if end_pos.distance_to(player_pos) > 15:
             exit_loop = True
             for portal in portals:
@@ -122,7 +120,7 @@ def prepare_places():
                 break
     key_pos = player_pos
     while True:
-        key_pos = random.choice(free_spaces)
+        key_pos = choice(free_spaces)
         if key_pos.distance_to(player_pos) > 15 and key_pos.distance_to(end_pos) > 15:
             exit_loop = True
             for portal in portals:
