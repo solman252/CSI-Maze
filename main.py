@@ -252,8 +252,8 @@ while True:
     if player_pos.distance_to(key_pos) < 0.5:
         has_key = True
     
-    if player_pos in [portal['pos'] for portal in portals]:
-        current_portal = next((portal for portal in portals if portal['pos'] == player_pos), None)
+    if new_player_pos in [portal['pos'] for portal in portals] and frames_since_last_move > 5:
+        current_portal = next((portal for portal in portals if portal['pos'] == new_player_pos), None)
         player_pos = current_portal['to_pos']
         new_player_pos = player_pos.copy()
         portaling = True
