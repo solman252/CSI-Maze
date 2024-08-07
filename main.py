@@ -151,7 +151,7 @@ while player_name == '':
         player_name = inp.lower()
 pygame.display.set_caption(f'Memory-Maze Demo - {player_name.title()}')
 
-if isfile('scores.json'):
+if not isfile('scores.json'):
     with open('scores.json','w') as f:
         f.write('{}')
         f.close()
@@ -362,7 +362,7 @@ while True:
     pygame.display.flip()
 
 runthrough_time = pygame.time.get_ticks() - runthrough_time_start
-if scores[player_name] != []:
+if player_name in scores.keys():
     if scores[player_name][0] > study_time/1000:
         scores[player_name][0] = study_time/1000
     if scores[player_name][1] > runthrough_time/1000:
