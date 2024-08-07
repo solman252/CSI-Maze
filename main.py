@@ -161,7 +161,7 @@ if not isfile('scores.json'):
         f.close()
 scores = dict(jsonLoad(open('scores.json','r')))
 if not (player_name in scores.keys()):
-    scores[player_name] = [0,0]
+    scores[player_name] = []
 
 has_key = False
 
