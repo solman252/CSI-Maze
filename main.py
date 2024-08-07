@@ -381,7 +381,7 @@ if scores[player_name] != []:
         scores[player_name][1] = runthrough_time/1000
 else:
     scores[player_name] = [study_time/1000,runthrough_time/1000]
-jsonDump(scores,open('scores.json','w'))
+jsonDump(scores,open('mazes/'+maze['filepath']+'/scores.json','w'))
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
