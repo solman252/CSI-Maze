@@ -161,7 +161,7 @@ if not isfile('scores.json'):
         f.close()
 scores = dict(jsonLoad(open('scores.json','r')))
 if not (player_name in scores.keys()):
-    scores[player_name] = []
+    scores[player_name] = [0,0]
 
 has_key = False
 
@@ -369,7 +369,7 @@ while True:
     pygame.display.flip()
 
 runthrough_time = pygame.time.get_ticks() - runthrough_time_start
-if player_name in scores.keys():
+if scores[player_name] != []:
     if scores[player_name][0] > study_time/1000:
         scores[player_name][0] = study_time/1000
     if scores[player_name][1] > runthrough_time/1000:
