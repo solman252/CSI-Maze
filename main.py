@@ -61,6 +61,7 @@ study_text = pygame.image.load('images/text/study.png')
 runthrough_text = pygame.image.load('images/text/run-through.png')
 record_text = pygame.image.load('images/text/record.png')
 none_text = pygame.image.load('images/text/none.png')
+paused_overlay = pygame.image.load('images/paused_overlay.png')
 
 # load mazes
 mazes = {}
@@ -180,16 +181,20 @@ portal_frames = 0
 portaling = False
 current_portal = None
 
+paused = False
+paused_times = []
+paused_start_time = 0
 while True:
     clock.tick(60)
+    print(paused_times)
     if frames_since_last_move < 10:
         frames_since_last_move += 1
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
         if event.type == pygame.KEYDOWN:
-            if full_vision:
-                if check_input('menu'):
+            if check_input('menu'):
+                if full_vision:
                     chosen = choicebox('', 'Please select a maze from below.', mazes.keys())
                     if chosen:
                         maze = mazes[chosen]
@@ -197,9 +202,15 @@ while True:
                         prepare_places()
                         load_scores()
                         study_time_start = pygame.time.get_ticks()
+                else:
+                    paused = not paused
+                    if paused:
+                        paused_start_time = pygame.time.get_ticks()
+                    else:
+                        paused_times.append(pygame.time.get_ticks() - paused_start_time)
             if event.key == pygame.K_ESCAPE:
                 exit()
-    if not portaling:
+    if (not portaling) and (not paused):
         moved = False
         if check_input('up') and (not moved) and frames_since_last_move >= 10:
             new_player_pos = player_pos.copy()
@@ -267,113 +278,121 @@ while True:
         new_player_pos = player_pos.copy()
         portaling = True
         portal_frames = 0
-    if portaling:
-        portal_screen = pygame.Surface(win.get_size(),pygame.SRCALPHA)
-        if portal_frames != 30:
-            portal_overlay = pygame.image.load(f'images/portal_transition/color_a/{portal_frames//3}.png').convert_alpha()
-        else:
-            portal_overlay = pygame.image.load('images/portal_transition/color_a/0.png').convert_alpha()
-        assert portal_overlay
-        portal_overlay.fill(current_portal['color'],special_flags=pygame.BLEND_RGB_MULT)
-        portal_screen.blit(portal_overlay,(0,0))
-        if portal_frames < 30:
-            portal_overlay = pygame.image.load(f'images/portal_transition/color_b/{portal_frames//3}.png').convert_alpha()
-        else:
-            portal_overlay = pygame.image.load('images/portal_transition/color_b/0.png').convert_alpha()
-        assert portal_overlay
-        portal_overlay.fill(current_portal['to_color'],special_flags=pygame.BLEND_RGB_MULT)
-        portal_screen.blit(portal_overlay,(0,0))
-        if portal_frames <= 10:
-            portal_screen.set_alpha(lerp(0,255,0.1*portal_frames))
-        elif portal_frames >= 20:
-            portal_screen.set_alpha(255-lerp(0,255,0.1*(portal_frames-20)))
-        display.blit(portal_screen,(0,0))
-        portal_frames += 1
-        if portal_frames >= 30:
-            portaling = False
-    else:
-        display.blit(pygame.transform.scale(maze['maze'],(1040,780)),(0,0))
-        end_rect = end.get_rect()
-        end_rect.topleft = (end_pos.x*20,end_pos.y*20)
-        display.blit(end,end_rect)
-        for portal in portals:
-            portal_rect = portal_color.get_rect()
-            portal_rect.topleft = (portal['pos'].x*20,portal['pos'].y*20)
-            portal_color__ = portal_color.copy()
-            portal_to_color__ = portal_to_color.copy()
-            portal_color__.fill(portal['color'],special_flags=pygame.BLEND_RGB_MULT)
-            portal_to_color__.fill(portal['to_color'],special_flags=pygame.BLEND_RGB_MULT)
-            display.blit(portal_color__,portal_rect)
-            display.blit(portal_to_color__,portal_rect)
-            display.blit(portal_border,portal_rect)
-        player_rect = player.get_rect()
-        player_rect.topleft = (player_pos.x*20,player_pos.y*20)
-        if has_key:
-            display.blit(player_key,player_rect)
-        else:
-            display.blit(player,player_rect)
-        if not has_key:
-            key_rect = key.get_rect()
-            key_rect.topleft = (key_pos.x*20,key_pos.y*20)
-            display.blit(key,key_rect)
-        if has_key and player_pos.distance_to(end_pos) < 0.5:
-            display.blit(win,(0,0))
-            pygame.display.flip()
-            break
-        if not full_vision:
-            darkness = pygame.Surface(display.get_size(),pygame.SRCALPHA)
-            darkness.fill('black')
-            vignette_rect = vignette.get_rect()
-            vignette_rect.centerx = player_pos.x*20+10
-            vignette_rect.centery = player_pos.y*20+10
-            darkness.blit(vignette,vignette_rect,special_flags=pygame.BLEND_RGBA_MIN)
-            display.blit(darkness,(0,0))
-    pygame.draw.rect(display,(50,50,50,255),pygame.Rect(0,780,1040,113))
-    pygame.draw.rect(display,(100,100,100,255),pygame.Rect(5,785,1030,103))
-    display.blit(study_text,(5+20,785+20))
-    display.blit(runthrough_text,(1040-(5+20)-runthrough_text.get_width(),785+20))
-    display.blit(record_text,(5+20+study_text.get_width()+21,785+20))
-    display.blit(record_text,(1040-(5+20)-runthrough_text.get_width()-record_text.get_width()-21,785+20))
     if not full_vision:
         runthrough_time = pygame.time.get_ticks() - runthrough_time_start
+        for time in paused_times:
+            runthrough_time -= time
     else:
         runthrough_time = 0
         study_time = pygame.time.get_ticks() - study_time_start
-    study_time_img = getNums(study_time/1000,3)
-    study_time_rect = study_time_img.get_rect()
-    study_time_rect.centerx = 5+20+(study_text.get_width()/2)
-    study_time_rect.top = 785+20+21*2
-    display.blit(study_time_img,study_time_rect)
-
-    if scores[player_name] != []:
-        study_record_time_img = getNums(scores[player_name][0],3,(204,170,0))
-        study_record_time_rect = study_record_time_img.get_rect()
-        study_record_time_rect.centerx = 5+20+study_text.get_width()+21+(record_text.get_width()/2)
-        study_record_time_rect.top = 785+20+21*2
-        display.blit(study_record_time_img,study_record_time_rect)
-
-        runthrough_record_time_img = getNums(scores[player_name][1],3,(204,170,0))
-        runthrough_record_time_rect = runthrough_record_time_img.get_rect()
-        runthrough_record_time_rect.centerx = 1040-(5+20+runthrough_text.get_width()+21+(record_text.get_width()/2))
-        runthrough_record_time_rect.top = 785+20+21*2
-        display.blit(runthrough_record_time_img,runthrough_record_time_rect)
+    if paused:
+        display.blit(paused_overlay,(0,0))
     else:
-        none_text_rect = none_text.get_rect()
-        none_text_rect.centerx = 5+20+study_text.get_width()+21+(record_text.get_width()/2)
-        none_text_rect.top = 785+20+21*2
-        display.blit(none_text,none_text_rect)
-        none_text_rect.centerx = 1040-(5+20+runthrough_text.get_width()+21+(record_text.get_width()/2))
-        display.blit(none_text,none_text_rect)
+        if portaling:
+            portal_screen = pygame.Surface(win.get_size(),pygame.SRCALPHA)
+            if portal_frames != 30:
+                portal_overlay = pygame.image.load(f'images/portal_transition/color_a/{portal_frames//3}.png').convert_alpha()
+            else:
+                portal_overlay = pygame.image.load('images/portal_transition/color_a/0.png').convert_alpha()
+            assert portal_overlay
+            portal_overlay.fill(current_portal['color'],special_flags=pygame.BLEND_RGB_MULT)
+            portal_screen.blit(portal_overlay,(0,0))
+            if portal_frames < 30:
+                portal_overlay = pygame.image.load(f'images/portal_transition/color_b/{portal_frames//3}.png').convert_alpha()
+            else:
+                portal_overlay = pygame.image.load('images/portal_transition/color_b/0.png').convert_alpha()
+            assert portal_overlay
+            portal_overlay.fill(current_portal['to_color'],special_flags=pygame.BLEND_RGB_MULT)
+            portal_screen.blit(portal_overlay,(0,0))
+            if portal_frames <= 10:
+                portal_screen.set_alpha(lerp(0,255,0.1*portal_frames))
+            elif portal_frames >= 20:
+                portal_screen.set_alpha(255-lerp(0,255,0.1*(portal_frames-20)))
+            display.blit(portal_screen,(0,0))
+            portal_frames += 1
+            if portal_frames >= 30:
+                portaling = False
+        else:
+            display.blit(pygame.transform.scale(maze['maze'],(1040,780)),(0,0))
+            end_rect = end.get_rect()
+            end_rect.topleft = (end_pos.x*20,end_pos.y*20)
+            display.blit(end,end_rect)
+            for portal in portals:
+                portal_rect = portal_color.get_rect()
+                portal_rect.topleft = (portal['pos'].x*20,portal['pos'].y*20)
+                portal_color__ = portal_color.copy()
+                portal_to_color__ = portal_to_color.copy()
+                portal_color__.fill(portal['color'],special_flags=pygame.BLEND_RGB_MULT)
+                portal_to_color__.fill(portal['to_color'],special_flags=pygame.BLEND_RGB_MULT)
+                display.blit(portal_color__,portal_rect)
+                display.blit(portal_to_color__,portal_rect)
+                display.blit(portal_border,portal_rect)
+            player_rect = player.get_rect()
+            player_rect.topleft = (player_pos.x*20,player_pos.y*20)
+            if has_key:
+                display.blit(player_key,player_rect)
+            else:
+                display.blit(player,player_rect)
+            if not has_key:
+                key_rect = key.get_rect()
+                key_rect.topleft = (key_pos.x*20,key_pos.y*20)
+                display.blit(key,key_rect)
+            if has_key and player_pos.distance_to(end_pos) < 0.5:
+                display.blit(win,(0,0))
+                pygame.display.flip()
+                break
+            if not full_vision:
+                darkness = pygame.Surface(display.get_size(),pygame.SRCALPHA)
+                darkness.fill('black')
+                vignette_rect = vignette.get_rect()
+                vignette_rect.centerx = player_pos.x*20+10
+                vignette_rect.centery = player_pos.y*20+10
+                darkness.blit(vignette,vignette_rect,special_flags=pygame.BLEND_RGBA_MIN)
+                display.blit(darkness,(0,0))
+        pygame.draw.rect(display,(50,50,50,255),pygame.Rect(0,780,1040,113))
+        pygame.draw.rect(display,(100,100,100,255),pygame.Rect(5,785,1030,103))
+        display.blit(study_text,(5+20,785+20))
+        display.blit(runthrough_text,(1040-(5+20)-runthrough_text.get_width(),785+20))
+        display.blit(record_text,(5+20+study_text.get_width()+21,785+20))
+        display.blit(record_text,(1040-(5+20)-runthrough_text.get_width()-record_text.get_width()-21,785+20))
 
-    runthrough_time_img = getNums(runthrough_time/1000,3)
-    runthrough_time_rect = runthrough_time_img.get_rect()
-    runthrough_time_rect.centerx = 1040-(5+20+(runthrough_text.get_width()/2))
-    runthrough_time_rect.top = 785+20+21*2
-    display.blit(runthrough_time_img,runthrough_time_rect)
+        study_time_img = getNums(study_time/1000,3)
+        study_time_rect = study_time_img.get_rect()
+        study_time_rect.centerx = 5+20+(study_text.get_width()/2)
+        study_time_rect.top = 785+20+21*2
+        display.blit(study_time_img,study_time_rect)
+
+        if scores[player_name] != []:
+            study_record_time_img = getNums(scores[player_name][0],3,(204,170,0))
+            study_record_time_rect = study_record_time_img.get_rect()
+            study_record_time_rect.centerx = 5+20+study_text.get_width()+21+(record_text.get_width()/2)
+            study_record_time_rect.top = 785+20+21*2
+            display.blit(study_record_time_img,study_record_time_rect)
+
+            runthrough_record_time_img = getNums(scores[player_name][1],3,(204,170,0))
+            runthrough_record_time_rect = runthrough_record_time_img.get_rect()
+            runthrough_record_time_rect.centerx = 1040-(5+20+runthrough_text.get_width()+21+(record_text.get_width()/2))
+            runthrough_record_time_rect.top = 785+20+21*2
+            display.blit(runthrough_record_time_img,runthrough_record_time_rect)
+        else:
+            none_text_rect = none_text.get_rect()
+            none_text_rect.centerx = 5+20+study_text.get_width()+21+(record_text.get_width()/2)
+            none_text_rect.top = 785+20+21*2
+            display.blit(none_text,none_text_rect)
+            none_text_rect.centerx = 1040-(5+20+runthrough_text.get_width()+21+(record_text.get_width()/2))
+            display.blit(none_text,none_text_rect)
+
+        runthrough_time_img = getNums(runthrough_time/1000,3)
+        runthrough_time_rect = runthrough_time_img.get_rect()
+        runthrough_time_rect.centerx = 1040-(5+20+(runthrough_text.get_width()/2))
+        runthrough_time_rect.top = 785+20+21*2
+        display.blit(runthrough_time_img,runthrough_time_rect)
 
     pygame.display.flip()
 
 runthrough_time = pygame.time.get_ticks() - runthrough_time_start
+for time in paused_times:
+    runthrough_time -= time
 if scores[player_name] != []:
     if scores[player_name][0] > study_time/1000:
         scores[player_name][0] = study_time/1000
