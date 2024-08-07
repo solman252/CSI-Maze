@@ -69,7 +69,7 @@ for _name in listdir('mazes'):
     try:
         if not isfile(f'mazes/{_name}/portals.json'):
             raise FileNotFoundError
-        mazes[name] = {'maze':pygame.image.load(f'mazes/{_name}/maze.png'),'portals':[]}
+        mazes[name] = {'maze':pygame.image.load(f'mazes/{_name}/maze.png'),'portals':[],'filepath':_name}
         if mazes[name]['maze'].get_size() != (52,39):
             raise "Maze not correct size."
         portals_data = jsonLoad(open(f'mazes/{_name}/portals.json','r'))
@@ -84,7 +84,7 @@ for _name in listdir('mazes'):
         mazes[name] = None
         mazes.pop(name)
 
-maze = mazes['Main Maze']['maze']
+maze = mazes['Main Maze']
 portals = mazes['Main Maze']['portals']
 
 free_spaces = None
@@ -95,9 +95,9 @@ key_pos = None
 def prepare_places():
     global free_spaces,player_pos,end_pos,key_pos,new_player_pos
     free_spaces = []
-    for x in range(maze.get_width()):
-        for y in range(maze.get_height()):
-            if maze.get_at((x,y)) == (255,255,255,255):
+    for x in range(maze['maze'].get_width()):
+        for y in range(maze['maze'].get_height()):
+            if maze['maze'].get_at((x,y)) != (0,0,0,255):
                 free_spaces.append(pygame.Vector2(x,y))
 
     player_pos = choice(free_spaces)
@@ -155,13 +155,17 @@ while player_name == '':
         player_name = inp.lower()
 pygame.display.set_caption(f'Memory-Maze Demo - {player_name.title()}')
 
-if not isfile('scores.json'):
-    with open('scores.json','w') as f:
-        f.write('{}')
-        f.close()
-scores = dict(jsonLoad(open('scores.json','r')))
-if not (player_name in scores.keys()):
-    scores[player_name] = []
+scores = {}
+def load_scores():
+    global scores
+    if not isfile('mazes/'+maze['filepath']+'/scores.json'):
+        with open('mazes/'+maze['filepath']+'/scores.json','w') as f:
+            f.write('{}')
+            f.close()
+    scores = dict(jsonLoad(open('mazes/'+maze['filepath']+'/scores.json','r')))
+    if not (player_name in scores.keys()):
+        scores[player_name] = []
+load_scores()
 
 has_key = False
 
@@ -188,9 +192,10 @@ while True:
                 if check_input('menu'):
                     chosen = choicebox('', 'Please select a maze from below.', mazes.keys())
                     if chosen:
-                        maze = mazes[chosen]['maze']
+                        maze = mazes[chosen]
                         portals = mazes[chosen]['portals']
                         prepare_places()
+                        load_scores()
                         study_time_start = pygame.time.get_ticks()
             if event.key == pygame.K_ESCAPE:
                 exit()
@@ -202,7 +207,7 @@ while True:
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.y -= 1
             moved = True
-            if maze.get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
+            if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.y += 1
                 moved = False
             elif full_vision:
@@ -215,7 +220,7 @@ while True:
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.y += 1 
             moved = True
-            if maze.get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
+            if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.y -= 1
                 moved = False
             elif full_vision:
@@ -228,7 +233,7 @@ while True:
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.x -= 1 
             moved = True
-            if maze.get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
+            if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.x += 1
                 moved = False
             elif full_vision:
@@ -241,7 +246,7 @@ while True:
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.x += 1
             moved = True
-            if maze.get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
+            if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.x -= 1
                 moved = False
             elif full_vision:
@@ -287,7 +292,7 @@ while True:
         if portal_frames >= 30:
             portaling = False
     else:
-        display.blit(pygame.transform.scale(maze,(1040,780)),(0,0))
+        display.blit(pygame.transform.scale(maze['maze'],(1040,780)),(0,0))
         end_rect = end.get_rect()
         end_rect.topleft = (end_pos.x*20,end_pos.y*20)
         display.blit(end,end_rect)
