@@ -186,7 +186,6 @@ paused_times = []
 paused_start_time = 0
 while True:
     clock.tick(60)
-    print(paused_times)
     if frames_since_last_move < 10:
         frames_since_last_move += 1
     for event in pygame.event.get():
