@@ -70,6 +70,8 @@ for _name in listdir('mazes'):
         if not isfile(f'mazes/{_name}/portals.json'):
             raise FileNotFoundError
         mazes[name] = {'maze':pygame.image.load(f'mazes/{_name}/maze.png'),'portals':[]}
+        if mazes[name]['maze'].get_size() != (52,39):
+            raise "Maze not correct size."
         portals_data = jsonLoad(open(f'mazes/{_name}/portals.json','r'))
         for portal in portals_data:
             portal_data = {}
