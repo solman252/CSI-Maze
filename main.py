@@ -1,24 +1,31 @@
+"""
+Maze Thingy
+"""
+
+# Pylint disable invalid errors
+# pylint: disable=W0621
+
 # Imports
-from random import choice
+from json import dump as save_json
+from json import load as load_json
 from os import listdir
 from os.path import isfile
-from json import load as load_json, dump as save_json
+from random import choice
+
 import pygame
-from easygui import enterbox, choicebox
+from easygui import choicebox, enterbox
 
 # Inits
 pygame.init()
 clock = pygame.time.Clock()
 
 # Create window
-(display_width, display_height) = (1040, 780+113)
-display = pygame.display.set_mode((display_width, display_height))
+display = pygame.display.set_mode((1040, 780+113))
 pygame.display.set_caption('Memory-Maze Demo')
-icon = pygame.image.load('images/icon.png').convert_alpha()
-pygame.display.set_icon(icon)
+pygame.display.set_icon(pygame.image.load('images/icon.png').convert_alpha())
 
 # Controls
-controls = {
+CONTROLS = {
     'up': [pygame.K_UP, pygame.K_w],
     'down': [pygame.K_DOWN, pygame.K_s],
     'left': [pygame.K_LEFT, pygame.K_a],
@@ -27,23 +34,32 @@ controls = {
     'exit': [pygame.K_ESCAPE]
 }
 def check_input(control_scheme):
+    """
+    Checks to see if any inputs in a given control scheme are currently being pressed.
+    """
     keys = pygame.key.get_pressed()
-    for key in controls[control_scheme]:
-        if keys[key]:
+    for k in CONTROLS[control_scheme]:
+        if keys[k]:
             return True
     return False
 
 # Rendering functions
 def lerp(v1, v2, t):
+    """
+    Basic linear interpolation function.
+    """
     return v1 * (1 - t) + v2 * t
 
 def create_numerical_text(num: int, length: int, color=(255, 255, 255)):
+    """
+    Returns a pygame surface containing the given numbers after rounding, and adding starting zeros if the number isn't [length] digits long.
+    """
     full_num = str(round(num, 1))
     full_num = (length-len(full_num)) * '0' + full_num
     i = 0
     text = pygame.Surface((21 * len(full_num) + 3 * len(full_num) - 3, 21), pygame.SRCALPHA)
-    for c in full_num:
-        char = pygame.image.load(f'images/text/{c}.png').convert_alpha()
+    for ch in full_num:
+        char = pygame.image.load(f'images/text/{ch}.png').convert_alpha()
         char.fill(color, special_flags=pygame.BLEND_RGB_MULT)
         text.blit(char, (21 * i + 3 * i, 0))
         i += 1
@@ -72,21 +88,21 @@ for _name in listdir('mazes'):
     name = _name.title()
     try:
         if not isfile(f'mazes/{_name}/portals.json'):
-            raise Exception('Portals json not found.')
+            raise FileNotFoundError('Portals.json not found.')
         maze_img = pygame.image.load(f'mazes/{_name}/maze.png')
         if maze_img.get_size() != (52, 39):
             if maze_img.get_size() == (50, 37):
                 maze_img = pygame.Surface((52, 39))
                 maze_img.blit(pygame.image.load(f'mazes/{_name}/maze.png'), (1, 1))
             else:
-                raise Exception('Maze size is invalid.')
+                raise ValueError('Maze size is invalid.')
         else:
             pygame.draw.line(maze_img, (0, 0, 0), (0, 0), (52, 0))
             pygame.draw.line(maze_img, (0, 0, 0), (52, 0), (52, 39))
             pygame.draw.line(maze_img, (0, 0, 0), (52, 39), (0, 39))
             pygame.draw.line(maze_img, (0, 0, 0), (0, 39), (0, 0))
         mazes[name] = {'maze': maze_img, 'portals': [], 'filepath': _name}
-        portals_data = load_json(open(f'mazes/{_name}/portals.json', 'r'))
+        portals_data = load_json(open(f'mazes/{_name}/portals.json', 'r',encoding='utf-8'))
         for portal in portals_data:
             portal_data = {}
             portal_data['pos'] = pygame.Vector2(portal['at'])
@@ -94,7 +110,7 @@ for _name in listdir('mazes'):
             portal_data['color'] = tuple(portal['color'])
             portal_data['to_color'] = tuple(portal['to_color'])
             mazes[name]['portals'].append(portal_data)
-    except Exception:
+    except (FileNotFoundError,ValueError):
         mazes[name] = None
         mazes.pop(name)
 
@@ -108,7 +124,7 @@ elif len(mazes.keys()) > 0:
     maze = mazes[list(mazes.keys())[0]]
     portals = maze['portals']
 else:
-    raise Exception('Error! There are no mazes to load.')
+    raise ValueError('Error! There are no mazes to load.')
 
 # Assign random spots for the player, lock, and key
 free_spaces = None
@@ -116,8 +132,10 @@ player_pos = None
 new_player_pos = None
 lock_pos = None
 key_pos = None
-min_distance = 15
-def prepare_places():
+def prepare_places(min_distance):
+    """
+    Places the player, lock, and key on the map, ensuring they are all atleast [min_distance] away from eachother and portals.
+    """
     global free_spaces, player_pos, lock_pos, key_pos, new_player_pos
     # Get empty spaces
     free_spaces = []
@@ -161,7 +179,7 @@ def prepare_places():
                     break
             if exit_loop:
                 break
-prepare_places()
+prepare_places(15)
 
 # Get player name
 player_name = ''
@@ -189,7 +207,7 @@ times = {}
 def load_times():
     global times
     if not isfile('mazes/'+maze['filepath']+'/times.json'):
-        with open('mazes/'+maze['filepath']+'/times.json','w') as f:
+        with open('mazes/'+maze['filepath']+'/times.json','w',encoding='utf-8') as f:
             f.write('{}')
             f.close()
     times = dict(load_json(open('mazes/'+maze['filepath']+'/times.json','r',encoding='utf-8')))
@@ -247,7 +265,7 @@ while True:
                     if chosen:
                         maze = mazes[chosen]
                         portals = mazes[chosen]['portals']
-                        prepare_places()
+                        prepare_places(15)
                         load_times()
                         study_time_start = pygame.time.get_ticks()
                 # Pause if on runthrough phase
@@ -323,7 +341,7 @@ while True:
         has_key = True
 
     if new_player_pos in [portal['pos'] for portal in portals] and frames_since_last_move > 5:
-        current_portal = next((portal for portal in portals if portal['pos'] == new_player_pos), None)
+        current_portal = next([portal for portal in portals if portal['pos'] == new_player_pos], None)
         player_pos = current_portal['to_pos']
         new_player_pos = player_pos.copy()
         portaling = True
