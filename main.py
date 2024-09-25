@@ -1,31 +1,31 @@
 """
-Maze Thingy
+Maze Game!
 """
 
-# Pylint disable invalid errors
-# pylint: disable=W0621
-
 # Imports
-from json import dump as save_json
-from json import load as load_json
+from random import choice
 from os import listdir
 from os.path import isfile
-from random import choice
-
+from json import load as load_json, dump as save_json
 import pygame
-from easygui import choicebox, enterbox
+from easygui import enterbox, choicebox
+
+# Pylint disable errors that annoy me
+# pylint: disable=W0621,C0103
 
 # Inits
 pygame.init()
 clock = pygame.time.Clock()
 
 # Create window
-display = pygame.display.set_mode((1040, 780+113))
+(display_width, display_height) = (1040, 780+113)
+display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Memory-Maze Demo')
-pygame.display.set_icon(pygame.image.load('images/icon.png').convert_alpha())
+icon = pygame.image.load('images/icon.png').convert_alpha()
+pygame.display.set_icon(icon)
 
 # Controls
-CONTROLS = {
+controls = {
     'up': [pygame.K_UP, pygame.K_w],
     'down': [pygame.K_DOWN, pygame.K_s],
     'left': [pygame.K_LEFT, pygame.K_a],
@@ -38,7 +38,7 @@ def check_input(control_scheme):
     Checks to see if any inputs in a given control scheme are currently being pressed.
     """
     keys = pygame.key.get_pressed()
-    for k in CONTROLS[control_scheme]:
+    for k in controls[control_scheme]:
         if keys[k]:
             return True
     return False
@@ -58,8 +58,8 @@ def create_numerical_text(num: int, length: int, color=(255, 255, 255)):
     full_num = (length-len(full_num)) * '0' + full_num
     i = 0
     text = pygame.Surface((21 * len(full_num) + 3 * len(full_num) - 3, 21), pygame.SRCALPHA)
-    for ch in full_num:
-        char = pygame.image.load(f'images/text/{ch}.png').convert_alpha()
+    for c in full_num:
+        char = pygame.image.load(f'images/text/{c}.png').convert_alpha()
         char.fill(color, special_flags=pygame.BLEND_RGB_MULT)
         text.blit(char, (21 * i + 3 * i, 0))
         i += 1
@@ -88,7 +88,7 @@ for _name in listdir('mazes'):
     name = _name.title()
     try:
         if not isfile(f'mazes/{_name}/portals.json'):
-            raise FileNotFoundError('Portals.json not found.')
+            raise FileNotFoundError('Portals json not found.')
         maze_img = pygame.image.load(f'mazes/{_name}/maze.png')
         if maze_img.get_size() != (52, 39):
             if maze_img.get_size() == (50, 37):
@@ -205,13 +205,16 @@ pygame.display.set_caption(f'Memory-Maze Demo - {player_name.title()}')
 # Load player times
 times = {}
 def load_times():
+    """
+    Loads the player's record times for the current maze.
+    """
     global times
     if not isfile('mazes/'+maze['filepath']+'/times.json'):
         with open('mazes/'+maze['filepath']+'/times.json','w',encoding='utf-8') as f:
             f.write('{}')
             f.close()
     times = dict(load_json(open('mazes/'+maze['filepath']+'/times.json','r',encoding='utf-8')))
-    if not (player_name in times.keys()):
+    if player_name not in times.keys():
         times[player_name] = []
 load_times()
 
@@ -257,7 +260,7 @@ while True:
         if event.type == pygame.QUIT:
             exit()
         if event.type == pygame.KEYDOWN:
-            # Enter key 
+            # Enter key
             if check_input('menu'):
                 # Maze selection if on study phase
                 if full_vision:
@@ -297,7 +300,7 @@ while True:
             new_player_pos = player_pos.copy()
             new_player_pos.x = round(new_player_pos.x)
             new_player_pos.y = round(new_player_pos.y)
-            new_player_pos.y += 1 
+            new_player_pos.y += 1
             moved = True
             if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.y -= 1
@@ -310,7 +313,7 @@ while True:
             new_player_pos = player_pos.copy()
             new_player_pos.x = round(new_player_pos.x)
             new_player_pos.y = round(new_player_pos.y)
-            new_player_pos.x -= 1 
+            new_player_pos.x -= 1
             moved = True
             if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.x += 1
@@ -341,7 +344,7 @@ while True:
         has_key = True
 
     if new_player_pos in [portal['pos'] for portal in portals] and frames_since_last_move > 5:
-        current_portal = next([portal for portal in portals if portal['pos'] == new_player_pos], None)
+        current_portal = next((portal for portal in portals if portal['pos'] == new_player_pos), None)
         player_pos = current_portal['to_pos']
         new_player_pos = player_pos.copy()
         portaling = True
