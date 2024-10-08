@@ -50,7 +50,7 @@ def lerp(v1, v2, t):
     """
     return v1 * (1 - t) + v2 * t
 
-def create_numerical_text(num: int, length: int, color=(255, 255, 255)):
+def create_numerical_text(num: int | float, length: int, color=(255, 255, 255)):
     """
     Returns a pygame surface containing the given numbers after rounding, and adding starting zeros if the number isn't [length] digits long.
     """
@@ -252,10 +252,10 @@ paused_start_time = 0
 # Main game loop
 while True:
     clock.tick(60)
-    # Allow movement
+    # Control speed of movement
     if frames_since_last_move < 10:
         frames_since_last_move += 1
-    # Handle inputs
+    ## Handle inputs
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
@@ -281,62 +281,76 @@ while True:
             # Escape key
             if check_input('exit'):
                 exit()
+    # Prevent movement if paused or currently traveling via portal
     if (not portaling) and (not paused):
         moved = False
+        # Up movement
         if check_input('up') and (not moved) and frames_since_last_move >= 10:
             new_player_pos = player_pos.copy()
             new_player_pos.x = round(new_player_pos.x)
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.y -= 1
             moved = True
+            # Prevent movement onto black spaces
             if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.y += 1
                 moved = False
+            # Start runthrough mode if in study mode
             elif full_vision:
                 full_vision = False
                 pygame.mouse.set_visible(False)
                 runthrough_time_start = pygame.time.get_ticks()
+        # Down movement
         elif check_input('down') and (not moved) and frames_since_last_move >= 10:
             new_player_pos = player_pos.copy()
             new_player_pos.x = round(new_player_pos.x)
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.y += 1
             moved = True
+            # Prevent movement onto black spaces
             if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.y -= 1
                 moved = False
+            # Start runthrough mode if in study mode
             elif full_vision:
                 full_vision = False
                 pygame.mouse.set_visible(False)
                 runthrough_time_start = pygame.time.get_ticks()
+        # Left movement
         if check_input('left') and (not moved) and frames_since_last_move >= 10:
             new_player_pos = player_pos.copy()
             new_player_pos.x = round(new_player_pos.x)
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.x -= 1
             moved = True
+            # Prevent movement onto black spaces
             if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.x += 1
                 moved = False
+            # Start runthrough mode if in study mode
             elif full_vision:
                 full_vision = False
                 pygame.mouse.set_visible(False)
                 runthrough_time_start = pygame.time.get_ticks()
+        # Right movement
         elif check_input('right') and (not moved) and frames_since_last_move >= 10:
             new_player_pos = player_pos.copy()
             new_player_pos.x = round(new_player_pos.x)
             new_player_pos.y = round(new_player_pos.y)
             new_player_pos.x += 1
             moved = True
+            # Prevent movement onto black spaces
             if maze['maze'].get_at((round(new_player_pos.x),round(new_player_pos.y))) == (0,0,0,255):
                 new_player_pos.x -= 1
                 moved = False
+            # Start runthrough mode if in study mode
             elif full_vision:
                 full_vision = False
                 pygame.mouse.set_visible(False)
                 runthrough_time_start = pygame.time.get_ticks()
     if moved:
         frames_since_last_move = 0
+    # Lerp the player to the new position
     if new_player_pos != player_pos:
         player_pos = lerp(player_pos,new_player_pos,0.1*frames_since_last_move)
 
