@@ -10,7 +10,7 @@ from json import load as load_json, dump as save_json
 import pygame
 from easygui import enterbox, choicebox
 
-# Pylint disable errors that annoy me
+# Pylint disable errors that annoy me, such as using the same variable name (e.g. i) in different circumstances, or naming varaibles in lower case in the global space (this is because despite the fact that these variables change, due to them being in the global scape, they are seen as constants.)
 # pylint: disable=W0621,C0103
 
 # Inits
