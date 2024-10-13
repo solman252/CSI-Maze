@@ -31,6 +31,7 @@ STUDY_TEXT = pygame.image.load('images/text/study.png')
 RUNTHROUGH_TEXT = pygame.image.load('images/text/run-through.png')
 RECORD_TEXT = pygame.image.load('images/text/record.png')
 NONE_TEXT = pygame.image.load('images/text/none.png')
+TIME_TEXT = pygame.image.load('images/text/time.png')
 
 # Controls
 CONTROLS = {
@@ -71,6 +72,18 @@ def create_numerical_text(num: int | float, length: int, color=(255, 255, 255)):
         char.fill(color, special_flags=pygame.BLEND_RGB_MULT)
         text.blit(char, (21 * i + 3 * i, 0))
         i += 1
+    return text
+
+def create_time_text(time: int | float, color=(255, 255, 255)):
+    """
+    Returns a pygame surface containing the given time after rounding, adding starting zeros if the number isn't [length] digits long, and converting to %h:%m:%s.
+    """
+    text = TIME_TEXT.copy().convert_alpha()
+    mins = int(time // 60)
+    secs = int(time % 60)
+    text.blit(create_numerical_text(mins,2), (0, 0))
+    text.blit(create_numerical_text(secs,2), (0, 24))
+    text.fill(color, special_flags=pygame.BLEND_RGB_MULT)
     return text
 
 # Assign random spots for the player, lock, and key
@@ -460,41 +473,47 @@ def main():
             # Draw the frame and labels
             pygame.draw.rect(display,(50,50,50,255),pygame.Rect(0,780,1040,113))
             pygame.draw.rect(display,(100,100,100,255),pygame.Rect(5,785,1030,103))
-            display.blit(STUDY_TEXT,(5+20,785+20))
+            study_text_rect = STUDY_TEXT.get_rect()
+            study_text_rect.centerx = 155
+            study_text_rect.top = 785+20
+            # display.blit(STUDY_TEXT,(5+20,785+20))
+            display.blit(STUDY_TEXT,study_text_rect)
             display.blit(RUNTHROUGH_TEXT,(1040-(5+20)-RUNTHROUGH_TEXT.get_width(),785+20))
-            display.blit(RECORD_TEXT,(5+20+STUDY_TEXT.get_width()+21,785+20))
+            # display.blit(RECORD_TEXT,(5+20+STUDY_TEXT.get_width()+21,785+20))
+            display.blit(RECORD_TEXT,(307,785+20))
             display.blit(RECORD_TEXT,(1040-(5+20)-RUNTHROUGH_TEXT.get_width()-RECORD_TEXT.get_width()-21,785+20))
 
             # Draw the study time
-            study_time_img = create_numerical_text(study_time/1000,3)
+            study_time_img = create_time_text(study_time/1000)
             study_time_rect = study_time_img.get_rect()
-            study_time_rect.centerx = 5+20+(STUDY_TEXT.get_width()/2)
-            study_time_rect.top = 785+20+21*2
+            # study_time_rect.centerx = 5+20+(STUDY_TEXT.get_width()/2)
+            study_time_rect.centerx = 155
+            study_time_rect.top = 785+20+21+8
             display.blit(study_time_img,study_time_rect)
             # Draw the player's runthrough time
-            runthrough_time_img = create_numerical_text(runthrough_time/1000,3)
+            runthrough_time_img = create_time_text(runthrough_time/1000)
             runthrough_time_rect = runthrough_time_img.get_rect()
             runthrough_time_rect.centerx = 1040-(5+20+(RUNTHROUGH_TEXT.get_width()/2))
-            runthrough_time_rect.top = 785+20+21*2
+            runthrough_time_rect.top = 785+20+21+8
             display.blit(runthrough_time_img,runthrough_time_rect)
             # Draw the player's record times
             if times[player_name] != []:
-                study_record_time_img = create_numerical_text(times[player_name][0],3,(204,170,0))
+                study_record_time_img = create_time_text(times[player_name][0],(204,170,0))
                 study_record_time_rect = study_record_time_img.get_rect()
-                study_record_time_rect.centerx = 5+20+STUDY_TEXT.get_width()+21+(RECORD_TEXT.get_width()/2)
-                study_record_time_rect.top = 785+20+21*2
+                study_record_time_rect.centerx = 307+(RECORD_TEXT.get_width()/2)
+                study_record_time_rect.top = 785+20+21+8
                 display.blit(study_record_time_img,study_record_time_rect)
 
-                runthrough_record_time_img = create_numerical_text(times[player_name][1],3,(204,170,0))
+                runthrough_record_time_img = create_time_text(times[player_name][1],(204,170,0))
                 runthrough_record_time_rect = runthrough_record_time_img.get_rect()
                 runthrough_record_time_rect.centerx = 1040-(5+20+RUNTHROUGH_TEXT.get_width()+21+(RECORD_TEXT.get_width()/2))
-                runthrough_record_time_rect.top = 785+20+21*2
+                runthrough_record_time_rect.top = 785+20+21+8
                 display.blit(runthrough_record_time_img,runthrough_record_time_rect)
             # The player has no record
             else:
                 none_text_rect = NONE_TEXT.get_rect()
-                none_text_rect.centerx = 5+20+STUDY_TEXT.get_width()+21+(RECORD_TEXT.get_width()/2)
-                none_text_rect.top = 785+20+21*2
+                none_text_rect.centerx = 307+(RECORD_TEXT.get_width()/2)
+                none_text_rect.top = 785+20+21+8
                 display.blit(NONE_TEXT,none_text_rect)
                 none_text_rect.centerx = 1040-(5+20+RUNTHROUGH_TEXT.get_width()+21+(RECORD_TEXT.get_width()/2))
                 display.blit(NONE_TEXT,none_text_rect)
