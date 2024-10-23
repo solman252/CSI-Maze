@@ -32,6 +32,7 @@ RUNTHROUGH_TEXT = pygame.image.load('images/text/run-through.png')
 RECORD_TEXT = pygame.image.load('images/text/record.png')
 NONE_TEXT = pygame.image.load('images/text/none.png')
 TIME_TEXT = pygame.image.load('images/text/time.png')
+MAX_TIME_TEXT = pygame.image.load('images/text/max_time.png')
 
 # Controls
 CONTROLS = {
@@ -484,27 +485,45 @@ def main():
             display.blit(RECORD_TEXT,(1040-(5+20)-RUNTHROUGH_TEXT.get_width()-RECORD_TEXT.get_width()-21,785+20))
 
             # Draw the study time
-            study_time_img = create_time_text(study_time/1000)
+            study_time_img = None
+            if study_time/1000 < 3600:
+                study_time_img = create_time_text(study_time/1000)
+            else:
+                study_time_img = MAX_TIME_TEXT
             study_time_rect = study_time_img.get_rect()
             # study_time_rect.centerx = 5+20+(STUDY_TEXT.get_width()/2)
             study_time_rect.centerx = 155
             study_time_rect.top = 785+20+21+8
             display.blit(study_time_img,study_time_rect)
             # Draw the player's runthrough time
-            runthrough_time_img = create_time_text(runthrough_time/1000)
+            runthrough_time_img = None
+            if runthrough_time/1000 < 3600:
+                runthrough_time_img = create_time_text(runthrough_time/1000)
+            else:
+                runthrough_time_img = MAX_TIME_TEXT
             runthrough_time_rect = runthrough_time_img.get_rect()
             runthrough_time_rect.centerx = 1040-(5+20+(RUNTHROUGH_TEXT.get_width()/2))
             runthrough_time_rect.top = 785+20+21+8
             display.blit(runthrough_time_img,runthrough_time_rect)
             # Draw the player's record times
             if times[player_name] != []:
-                study_record_time_img = create_time_text(times[player_name][0],(204,170,0))
+                study_record_time_img = None
+                if times[player_name][0] < 3600:
+                    study_record_time_img = create_time_text(times[player_name][0],(204,170,0))
+                else:
+                    study_record_time_img = MAX_TIME_TEXT.copy()
+                    study_record_time_img.fill((204,170,0), special_flags=pygame.BLEND_RGB_MULT)
                 study_record_time_rect = study_record_time_img.get_rect()
                 study_record_time_rect.centerx = 307+(RECORD_TEXT.get_width()/2)
                 study_record_time_rect.top = 785+20+21+8
                 display.blit(study_record_time_img,study_record_time_rect)
-
-                runthrough_record_time_img = create_time_text(times[player_name][1],(204,170,0))
+                
+                runthrough_record_time_img = None
+                if times[player_name][1] < 3600:
+                    runthrough_record_time_img = create_time_text(times[player_name][1],(204,170,0))
+                else:
+                    runthrough_record_time_img = MAX_TIME_TEXT.copy()
+                    runthrough_record_time_img.fill((204,170,0), special_flags=pygame.BLEND_RGB_MULT)
                 runthrough_record_time_rect = runthrough_record_time_img.get_rect()
                 runthrough_record_time_rect.centerx = 1040-(5+20+RUNTHROUGH_TEXT.get_width()+21+(RECORD_TEXT.get_width()/2))
                 runthrough_record_time_rect.top = 785+20+21+8
